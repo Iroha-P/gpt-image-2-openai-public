@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GPT Image 2 Studio</title>
+  <meta name="description" content="A local image-generation workbench for the official OpenAI Images API with prompt skills, 1K-8K exports, and PSD helpers.">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #061014;
+      --panel: #0b1920;
+      --panel-strong: #10232b;
+      --text: #f5fbff;
+      --muted: #9fb5bd;
+      --line: rgba(122, 242, 218, 0.22);
+      --cyan: #55f0df;
+      --green: #6cf7ad;
+      --blue: #84a7ff;
+      --rose: #ff79ae;
+      --shadow: rgba(0, 0, 0, 0.42);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    .topbar {
+      position: fixed;
+      z-index: 20;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      background: rgba(6, 16, 20, 0.86);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; }
+    .mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--cyan);
+      border-radius: 8px;
+      color: var(--cyan);
+      box-shadow: inset 0 0 18px rgba(85, 240, 223, 0.14);
+      font-weight: 900;
+    }
+    .nav { display: flex; gap: 18px; color: var(--muted); font-size: 14px; }
+    .nav a:hover { color: var(--text); }
+
+    .hero {
+      min-height: 92vh;
+      display: flex;
+      align-items: flex-end;
+      padding: 112px 32px 56px;
+      background-image:
+        linear-gradient(90deg, rgba(6, 16, 20, 0.98), rgba(6, 16, 20, 0.7) 48%, rgba(6, 16, 20, 0.16)),
+        linear-gradient(0deg, rgba(6, 16, 20, 0.95), rgba(6, 16, 20, 0.06) 45%, rgba(6, 16, 20, 0.42)),
+        url("screenshot-studio.png");
+      background-size: cover;
+      background-position: center top;
+      border-bottom: 1px solid var(--line);
+    }
+    .hero-inner, .wrap { width: min(1180px, 100%); margin: 0 auto; }
+    .eyebrow {
+      width: fit-content;
+      padding: 6px 10px;
+      border: 1px solid rgba(85, 240, 223, 0.46);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(6, 16, 20, 0.7);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    h1 {
+      max-width: 780px;
+      margin: 22px 0 18px;
+      font-size: 64px;
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+    .hero-copy {
+      max-width: 700px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .button {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font-weight: 800;
+    }
+    .button.primary {
+      color: #031213;
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      border-color: transparent;
+    }
+    .button.secondary { background: rgba(255, 255, 255, 0.06); }
+
+    section {
+      padding: 76px 32px;
+      border-bottom: 1px solid var(--line);
+    }
+    .section-heading { max-width: 780px; margin-bottom: 28px; }
+    h2 { margin: 0 0 12px; font-size: 36px; line-height: 1.15; letter-spacing: 0; }
+    .lead { margin: 0; color: var(--muted); font-size: 17px; }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .feature {
+      min-height: 168px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .feature strong { display: block; margin-bottom: 10px; font-size: 17px; }
+    .feature p { margin: 0; color: var(--muted); font-size: 14px; }
+    .accent-cyan { border-top: 3px solid var(--cyan); }
+    .accent-green { border-top: 3px solid var(--green); }
+    .accent-blue { border-top: 3px solid var(--blue); }
+    .accent-rose { border-top: 3px solid var(--rose); }
+
+    .screens {
+      display: grid;
+      grid-template-columns: 1.4fr 0.8fr;
+      gap: 18px;
+      align-items: start;
+    }
+    figure {
+      margin: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-strong);
+      box-shadow: 0 20px 60px var(--shadow);
+    }
+    figcaption {
+      padding: 14px 16px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: 14px;
+    }
+
+    .skill-band {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--line);
+    }
+    .skill-band div {
+      padding: 22px;
+      background: var(--panel);
+    }
+    .skill-band strong {
+      display: block;
+      font-size: 34px;
+      line-height: 1;
+      margin-bottom: 8px;
+      color: var(--cyan);
+    }
+    .skill-band span { color: var(--muted); }
+
+    .workflow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: center;
+    }
+    .steps { display: grid; gap: 12px; counter-reset: step; }
+    .step {
+      position: relative;
+      min-height: 72px;
+      padding: 16px 16px 16px 58px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      left: 16px;
+      top: 17px;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #031213;
+      background: var(--cyan);
+      font-weight: 900;
+      font-size: 14px;
+    }
+    .step strong { display: block; }
+    .step span { color: var(--muted); font-size: 14px; }
+
+    .footer {
+      padding: 34px 32px;
+      color: var(--muted);
+      background: #03090c;
+    }
+    .footer .wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .topbar { padding: 0 18px; }
+      .nav { display: none; }
+      .hero { min-height: 88vh; padding: 96px 20px 46px; background-position: 28% top; }
+      h1 { font-size: 44px; }
+      section { padding: 58px 20px; }
+      .feature-grid, .screens, .skill-band, .workflow { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      h1 { font-size: 36px; }
+      h2 { font-size: 28px; }
+      .hero-copy { font-size: 16px; }
+      .actions { flex-direction: column; }
+      .button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="GPT Image 2 Studio home">
+      <span class="mark">G2</span>
+      <span>GPT Image 2 Studio</span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="#features">Features</a>
+      <a href="#skills">Skills</a>
+      <a href="#screenshots">Interface</a>
+      <a href="https://github.com/Iroha-P/gpt-image-2-openai-public">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-inner">
+        <div class="eyebrow">Official OpenAI image API workbench</div>
+        <h1 id="hero-title">GPT Image 2 Studio</h1>
+        <p class="hero-copy">
+          A local AI image console with official OpenAI routing, a large prompt-skill library, 1K to 8K export planning, reference-image workflows, and PSD helpers.
+        </p>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/Iroha-P/gpt-image-2-openai-public/archive/refs/heads/main.zip">Download source</a>
+          <a class="button secondary" href="https://github.com/Iroha-P/gpt-image-2-openai-public">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2>More than an API form.</h2>
+          <p class="lead">The studio wraps GPT image generation with prompt skills, export controls, reference images, local history, and public-safe configuration.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature accent-cyan">
+            <strong>Official OpenAI API</strong>
+            <p>Uses the official base URL by default and keeps real keys out of tracked config.</p>
+          </article>
+          <article class="feature accent-green">
+            <strong>Prompt skill engine</strong>
+            <p>Use-case, style, and subject skills turn rough ideas into structured image directions.</p>
+          </article>
+          <article class="feature accent-blue">
+            <strong>Multi-mode generation</strong>
+            <p>Text-to-image, image-to-image, and image-plus-text flows in one local console.</p>
+          </article>
+          <article class="feature accent-rose">
+            <strong>Export workflow</strong>
+            <p>1K to 8K presets, native/upscaled labels, readable mirrors, and optional PSD layers.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="skills">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2>A large built-in image-generation skill library.</h2>
+          <p class="lead">The public OpenAI version keeps the Skill-edition prompt workflow and integrates image-generation skill presets from <a href="https://github.com/EvoLinkAI/awesome-gpt-image-2-API-and-Prompts">EvoLinkAI/awesome-gpt-image-2-API-and-Prompts</a>.</p>
+        </div>
+        <div class="skill-band">
+          <div>
+            <strong>10</strong>
+            <span>use-case skills for product, social, posters, game assets, thumbnails, diagrams, and more</span>
+          </div>
+          <div>
+            <strong>16</strong>
+            <span>style skills including photography, cinematic, 3D render, pixel art, ink, retro, and cyberpunk</span>
+          </div>
+          <div>
+            <strong>15</strong>
+            <span>subject skills covering people, products, interiors, landscapes, vehicles, typography, charts, and backgrounds</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screenshots">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2>Interface guide for real generation sessions.</h2>
+          <p class="lead">The interface keeps prompt controls, skills, preview state, model status, and export metadata visible without turning into a heavy editor.</p>
+        </div>
+        <div class="screens">
+          <figure>
+            <img src="screenshot-studio.png" alt="GPT Image 2 Studio desktop console">
+            <figcaption>Studio console: prompt editor, generation mode, skill selectors, export scale, model status, and result area.</figcaption>
+          </figure>
+          <figure>
+            <img src="screenshot-mobile.png" alt="GPT Image 2 Studio mobile layout">
+            <figcaption>Mobile layout: quick API-key entry, bilingual controls, history, settings, and stacked prompt tools.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap workflow">
+        <div class="section-heading">
+          <h2>Public-safe by default.</h2>
+          <p class="lead">The repository version is designed for open-source publishing: no bundled secret, no third-party provider fields, and a local ignored config file for real credentials.</p>
+        </div>
+        <div class="steps">
+          <div class="step">
+            <strong>Set key locally</strong>
+            <span>Use `OPENAI_API_KEY` or save credentials into ignored `config.local.json`.</span>
+          </div>
+          <div class="step">
+            <strong>Build the prompt</strong>
+            <span>Combine user intent with image-generation skills for structured GPT Image 2 direction.</span>
+          </div>
+          <div class="step">
+            <strong>Export results</strong>
+            <span>Save images, readable output mirrors, and optional Photoshop layer files.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <span>MIT licensed. Official OpenAI image API by default.</span>
+      <a href="https://github.com/Iroha-P/gpt-image-2-openai-public">github.com/Iroha-P/gpt-image-2-openai-public</a>
+    </div>
+  </footer>
+</body>
+</html>
