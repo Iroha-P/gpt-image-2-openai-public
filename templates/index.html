@@ -1,0 +1,1179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GPT Image 2 Studio</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #03070b;
+      --bg-2: #061118;
+      --ink: #edf8ff;
+      --muted: #7f91a6;
+      --dim: #526274;
+      --panel: rgba(5, 15, 22, .76);
+      --panel-2: rgba(7, 20, 29, .88);
+      --field: rgba(2, 9, 15, .84);
+      --line: rgba(116, 232, 255, .17);
+      --line-strong: rgba(95, 255, 210, .38);
+      --cyan: #4be8ff;
+      --green: #58ffc7;
+      --blue: #4e8cff;
+      --amber: #ffd166;
+      --danger: #ff5f88;
+      --radius: 8px;
+      --shadow: 0 28px 90px rgba(0, 0, 0, .50);
+      --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; letter-spacing: 0; }
+    html { min-height: 100%; background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--font-ui);
+      font-size: 15px;
+      line-height: 1.45;
+      letter-spacing: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-feature-settings: "kern" 1;
+      background:
+        linear-gradient(180deg, rgba(8, 22, 31, .96) 0%, rgba(3, 7, 11, .98) 46%, #03070b 100%),
+        radial-gradient(circle at 16% 0%, rgba(75, 232, 255, .22), transparent 30%),
+        radial-gradient(circle at 92% 12%, rgba(88, 255, 199, .16), transparent 28%);
+      overflow-x: hidden;
+    }
+    .surface-noise {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        linear-gradient(rgba(75, 232, 255, .050) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(88, 255, 199, .040) 1px, transparent 1px),
+        linear-gradient(135deg, transparent 0 48%, rgba(75, 232, 255, .045) 49%, transparent 50% 100%);
+      background-size: 42px 42px, 42px 42px, 18px 18px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.96), rgba(0,0,0,.18));
+    }
+    #network-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      opacity: .62;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      padding-bottom: 28px;
+    }
+    button, input, textarea, select { font: inherit; }
+    button { user-select: none; }
+    .command-bar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: grid;
+      grid-template-columns: minmax(250px, 360px) minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      min-height: 72px;
+      padding: 12px 22px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(3, 7, 11, .78);
+      backdrop-filter: blur(22px);
+      box-shadow: 0 12px 38px rgba(0, 0, 0, .28);
+    }
+    .brand-lockup { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(75, 232, 255, .62);
+      border-radius: 8px;
+      color: var(--green);
+      font-weight: 700;
+      background:
+        linear-gradient(135deg, rgba(75, 232, 255, .18), rgba(88, 255, 199, .06)),
+        repeating-linear-gradient(90deg, transparent 0 7px, rgba(75, 232, 255, .15) 8px 9px);
+      box-shadow: inset 0 0 20px rgba(75, 232, 255, .10), 0 0 30px rgba(75, 232, 255, .18);
+    }
+    .brand-title { margin: 0; font-size: 1.06rem; font-weight: 650; line-height: 1.2; }
+    .brand-sub { margin-top: 3px; color: var(--muted); font-size: .80rem; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .command-center {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(112px, 1fr));
+      gap: 9px;
+      min-width: 0;
+    }
+    .status-chip, .metric-chip {
+      min-height: 42px;
+      display: grid;
+      align-content: center;
+      gap: 2px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(5, 15, 22, .62);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+      overflow: hidden;
+    }
+    .status-chip { grid-template-columns: auto auto 1fr; align-items: center; column-gap: 7px; color: var(--muted); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 16px var(--green); }
+    .metric-chip span { color: var(--dim); font-size: .72rem; font-weight: 500; }
+    .metric-chip strong { color: #dffcff; font-size: .88rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .command-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .lang-toggle { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: rgba(5, 15, 22, .82); }
+    .lang-toggle button {
+      min-height: 30px;
+      border: 0;
+      border-radius: 6px;
+      padding: 6px 9px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+    }
+    .lang-toggle button.active { color: #021015; background: linear-gradient(135deg, var(--cyan), var(--green)); }
+    .btn {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 13px;
+      color: var(--ink);
+      background: linear-gradient(180deg, rgba(11, 28, 39, .90), rgba(6, 17, 25, .82));
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+      font-size: .86rem;
+      font-weight: 500;
+      line-height: 1.25;
+    }
+    .btn:hover { border-color: var(--line-strong); box-shadow: 0 0 24px rgba(75, 232, 255, .10); }
+    .btn.primary {
+      color: #021015;
+      border-color: rgba(88, 255, 199, .78);
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      box-shadow: 0 16px 44px rgba(75, 232, 255, .18);
+      font-weight: 650;
+    }
+    .btn.danger { color: #ffe5ec; border-color: rgba(255, 95, 136, .55); }
+    .btn:disabled { opacity: .54; cursor: not-allowed; }
+    .studio-grid {
+      width: min(1640px, 100%);
+      margin: 0 auto;
+      padding: 18px 22px 0;
+      display: grid;
+      grid-template-columns: 410px minmax(0, 1fr) 310px;
+      gap: 16px;
+    }
+    .control-console, .preview-stage, .inspector-rail {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(8, 21, 30, .84), rgba(4, 12, 18, .78));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+    .control-console:before, .preview-stage:before, .inspector-rail:before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(75, 232, 255, .78), rgba(88, 255, 199, .58), transparent);
+      pointer-events: none;
+    }
+    .section-head {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 15px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(11, 28, 39, .90), rgba(5, 15, 22, .60));
+    }
+    .section-title { margin: 0; font-size: .96rem; font-weight: 620; color: #e6fbff; }
+    .section-kicker { color: var(--green); font-size: .72rem; font-weight: 600; }
+    .section-body { padding: 14px; display: grid; gap: 12px; }
+    .mode-switch {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(1, 7, 12, .58);
+    }
+    .mode-switch .btn { min-height: 42px; padding: 8px; font-size: .80rem; font-weight: 500; }
+    .mode-switch .btn.active {
+      color: var(--green);
+      border-color: rgba(88, 255, 199, .58);
+      background: rgba(88, 255, 199, .08);
+      box-shadow: inset 0 0 24px rgba(88, 255, 199, .06);
+    }
+    label { display: grid; gap: 7px; color: var(--muted); font-size: .79rem; font-weight: 600; line-height: 1.28; }
+    textarea, input, select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 11px;
+      color: var(--ink);
+      background: var(--field);
+      outline: none;
+      font-size: .88rem;
+      line-height: 1.35;
+    }
+    textarea { min-height: 148px; resize: vertical; line-height: 1.55; }
+    textarea:focus, input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(88, 255, 199, .10); }
+    select option { background: #061118; color: var(--ink); }
+    .quick-key {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 9px;
+      padding: 11px;
+      border: 1px solid rgba(75, 232, 255, .25);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(75, 232, 255, .10), rgba(88, 255, 199, .045)),
+        rgba(1, 7, 12, .48);
+    }
+    .quick-key .key-source { grid-column: 1 / -1; }
+    .file-field { display: grid; gap: 7px; }
+    .field-label { color: var(--muted); font-size: .79rem; font-weight: 600; line-height: 1.28; }
+    .file-native {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .file-picker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--field);
+    }
+    .file-picker .btn { min-height: 32px; padding: 7px 12px; }
+    .form-grid, .skill-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .skill-preview {
+      min-height: 44px;
+      padding: 10px 11px;
+      border: 1px dashed rgba(116, 232, 255, .25);
+      border-radius: 8px;
+      color: var(--muted);
+      background: rgba(1, 7, 12, .42);
+      font-size: .80rem;
+      line-height: 1.45;
+    }
+    .preview-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .preview-thumb { width: 66px; aspect-ratio: 1; border: 1px solid var(--line); border-radius: 8px; object-fit: cover; background: #02070b; }
+    .check-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: .80rem;
+      line-height: 1.35;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: rgba(1, 7, 12, .38);
+    }
+    .check input { width: auto; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; }
+    .stage-canvas {
+      display: grid;
+      min-height: 650px;
+      padding: 14px;
+      background:
+        linear-gradient(90deg, rgba(75, 232, 255, .08) 0 1px, transparent 1px 100%),
+        linear-gradient(0deg, rgba(88, 255, 199, .055) 0 1px, transparent 1px 100%),
+        radial-gradient(circle at 50% 0%, rgba(75, 232, 255, .13), transparent 46%),
+        rgba(1, 7, 12, .52);
+      background-size: 48px 48px, 48px 48px, auto, auto;
+    }
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      align-content: start;
+      gap: 14px;
+      min-height: 520px;
+    }
+    .empty-state {
+      min-height: 520px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed rgba(116, 232, 255, .24);
+      border-radius: 8px;
+      color: var(--muted);
+      background: rgba(1, 7, 12, .42);
+      text-align: center;
+      padding: 24px;
+    }
+    .empty-viz {
+      width: min(360px, 100%);
+      margin: 0 auto 16px;
+      aspect-ratio: 16 / 9;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(75, 232, 255, .12) 0 1px, transparent 1px 100%),
+        linear-gradient(0deg, rgba(88, 255, 199, .09) 0 1px, transparent 1px 100%),
+        linear-gradient(135deg, rgba(75, 232, 255, .08), rgba(88, 255, 199, .04));
+      background-size: 28px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .empty-viz:before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      background:
+        linear-gradient(120deg, transparent 0 12%, rgba(75,232,255,.62) 13% 14%, transparent 15% 34%, rgba(88,255,199,.56) 35% 36%, transparent 37% 100%);
+      opacity: .78;
+    }
+    .empty-viz:after {
+      content: "NEURAL RENDER PIPELINE";
+      position: absolute;
+      left: 14px;
+      bottom: 12px;
+      color: rgba(237, 248, 255, .52);
+      font-size: .68rem;
+      font-weight: 600;
+    }
+    .result-card { border: 1px solid var(--line); border-radius: 8px; background: rgba(1, 7, 12, .70); overflow: hidden; }
+    .result-card img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; background: #02070b; cursor: zoom-in; }
+    .result-foot { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 10px; }
+    .progress-track {
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(116, 232, 255, .12);
+      border: 1px solid rgba(116, 232, 255, .14);
+    }
+    .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan), var(--green)); transition: width .25s; box-shadow: 0 0 18px rgba(88, 255, 199, .35); }
+    .metric-stack { display: grid; gap: 10px; }
+    .metric-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(1, 7, 12, .44);
+    }
+    .metric-card span { display: block; color: var(--dim); font-size: .74rem; font-weight: 500; margin-bottom: 6px; }
+    .metric-card strong { display: block; color: #ecfeff; font-size: .96rem; font-weight: 600; overflow-wrap: anywhere; }
+    .analysis-panel {
+      display: grid;
+      gap: 10px;
+      padding-top: 2px;
+    }
+    .algo-map {
+      height: 180px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(1, 7, 12, .42);
+      overflow: hidden;
+      position: relative;
+    }
+    .algo-map svg { width: 100%; height: 100%; display: block; }
+    .data-row {
+      display: grid;
+      grid-template-columns: 74px 1fr auto;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: .78rem;
+      line-height: 1.35;
+    }
+    .bar {
+      height: 7px;
+      border-radius: 99px;
+      background: rgba(116, 232, 255, .12);
+      overflow: hidden;
+    }
+    .bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--green)); }
+    .muted { color: var(--muted); font-size: .82rem; line-height: 1.45; }
+    .overlay { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(1, 7, 12, .78); backdrop-filter: blur(10px); }
+    .overlay.show { display: flex; }
+    .modal {
+      width: min(780px, 100%);
+      max-height: 86vh;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+      box-shadow: var(--shadow);
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px; border-bottom: 1px solid var(--line); }
+    .modal-body { padding: 15px; display: grid; gap: 13px; }
+    .history-list { display: grid; gap: 10px; }
+    .history-item { border: 1px solid var(--line); border-radius: 8px; padding: 11px; background: rgba(1, 7, 12, .44); }
+    .toast {
+      position: fixed;
+      top: 84px;
+      right: 18px;
+      z-index: 80;
+      max-width: min(440px, calc(100vw - 36px));
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 95, 136, .52);
+      border-radius: 8px;
+      color: #ffe5eb;
+      background: rgba(94, 16, 42, .96);
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+      transition: .2s;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { color: #dffcef; border-color: rgba(88, 255, 199, .52); background: rgba(3, 85, 66, .96); }
+    .lightbox-img { max-width: 94vw; max-height: 90vh; border-radius: 8px; background: #02070b; }
+    @media (max-width: 1260px) {
+      .command-bar { grid-template-columns: minmax(220px, 320px) minmax(0, 1fr); }
+      .command-actions { grid-column: 1 / -1; justify-content: flex-start; }
+      .studio-grid { grid-template-columns: minmax(340px, 430px) minmax(0, 1fr); }
+      .inspector-rail { grid-column: 1 / -1; }
+      .metric-stack { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .analysis-panel { grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr); }
+    }
+    @media (max-width: 860px) {
+      .command-bar { grid-template-columns: 1fr; padding: 12px; }
+      .brand-sub { white-space: normal; }
+      .command-center { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .command-actions { flex-wrap: wrap; }
+      .studio-grid { grid-template-columns: 1fr; padding: 14px; }
+      .form-grid, .skill-grid, .check-grid, .metric-stack, .quick-key, .analysis-panel { grid-template-columns: 1fr; }
+      .mode-switch { grid-template-columns: 1fr; }
+      .stage-canvas { min-height: 460px; }
+      .result-grid, .empty-state { min-height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="network-canvas"></canvas>
+  <div class="surface-noise"></div>
+  <div class="app-shell">
+    <header class="command-bar">
+      <div class="brand-lockup">
+        <div class="brand-mark">G2</div>
+        <div>
+          <h1 class="brand-title">GPT Image 2 Studio</h1>
+          <div class="brand-sub" data-i18n="subtitle">AI console for official OpenAI image generation</div>
+        </div>
+      </div>
+      <div class="command-center">
+        <div class="status-chip"><span class="status-dot"></span><span id="online-count">0</span><span data-i18n="online">online</span></div>
+        <div class="metric-chip"><span data-i18n="provider">Provider</span><strong>OpenAI</strong></div>
+        <div class="metric-chip"><span data-i18n="model">Model</span><strong id="model-label">gpt-image-2</strong></div>
+        <div class="metric-chip"><span>8K</span><strong data-i18n="renderPipe">Render pipeline</strong></div>
+      </div>
+      <div class="command-actions">
+        <div class="lang-toggle">
+          <button id="lang-en" type="button">English</button>
+          <button id="lang-zh" type="button">中文</button>
+        </div>
+        <button class="btn" id="history-btn" type="button" data-i18n="history">History</button>
+        <button class="btn" id="settings-btn" type="button" data-i18n="settings">Settings</button>
+      </div>
+    </header>
+
+    <main class="studio-grid" data-workflow="input-generate-results">
+      <section class="control-console">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker" data-i18n="stepInput">Input Matrix</div>
+            <h2 class="section-title" data-i18n="controls">Generation controls</h2>
+          </div>
+          <span class="muted" id="api-status">API</span>
+        </div>
+        <div class="section-body">
+          <div class="quick-key">
+            <label>
+              <span data-i18n="quickApiKey">Quick API key</span>
+              <input id="quick-openai-key" type="password" autocomplete="off" data-i18n-placeholder="quickApiKeyPlaceholder" placeholder="Paste OpenAI API key">
+            </label>
+            <button class="btn" id="quick-save-key" type="button" data-i18n="saveKey">Save key</button>
+            <span class="muted key-source" id="key-source">Key source: not configured</span>
+          </div>
+
+          <div class="mode-switch">
+            <button class="btn active" type="button" data-mode="text" data-i18n="textMode">Text to image</button>
+            <button class="btn" type="button" data-mode="image" data-i18n="imageMode">Image to image</button>
+            <button class="btn" type="button" data-mode="image_text" data-i18n="imageTextMode">Image + text</button>
+          </div>
+
+          <label>
+            <span data-i18n="prompt">Prompt</span>
+            <textarea id="prompt" data-i18n-placeholder="promptPlaceholder" placeholder="Describe subject, scene, lighting, composition, material, and use case."></textarea>
+          </label>
+
+          <div class="skill-grid">
+            <label><span data-i18n="skillMode">Prompt skill mode</span><select id="skill-mode"><option value="free">Free</option><option value="light">Light enhancement</option><option value="structured">Structured</option></select></label>
+            <label><span data-i18n="useCase">Use case</span><select id="skill-use-case"></select></label>
+            <label><span data-i18n="style">Style</span><select id="skill-style"></select></label>
+            <label><span data-i18n="subject">Subject</span><select id="skill-subject"></select></label>
+          </div>
+          <div class="actions">
+            <button class="btn" id="apply-skill" type="button" data-i18n="applySkill">Apply to prompt</button>
+            <button class="btn" id="random-skill" type="button" data-i18n="randomSkill">Random inspiration</button>
+          </div>
+          <div class="skill-preview" id="skill-preview" data-i18n="skillPreviewFree">Free mode: only your prompt is used.</div>
+
+          <div class="file-field">
+            <span class="field-label" data-i18n="references">Reference images</span>
+            <input class="file-native" id="images" type="file" accept="image/*" multiple>
+            <div class="file-picker">
+              <button class="btn" id="images-pick" type="button" data-i18n="chooseFiles">Choose files</button>
+              <span class="muted" id="images-file-status" data-i18n="noFileSelected">No files selected</span>
+            </div>
+          </div>
+          <div class="preview-row" id="preview-row"></div>
+
+          <div class="form-grid">
+            <label>
+              <span data-i18n="size">Output size</span>
+              <select id="size-label">
+                <option value="1k_square">1K square 1024x1024</option>
+                <option value="1k_landscape">1K landscape 1536x1024</option>
+                <option value="1k_portrait">1K portrait 1024x1536</option>
+                <option value="2k_square">2K square 2048x2048</option>
+                <option value="2k_landscape">2K landscape 3072x2048</option>
+                <option value="2k_portrait">2K portrait 2048x3072</option>
+                <option value="4k_square">4K square, upscaled export</option>
+                <option value="4k_landscape" selected>4K landscape native 3840x2160</option>
+                <option value="4k_portrait">4K portrait native 2160x3840</option>
+                <option value="8k_square">8K square, upscaled export</option>
+                <option value="8k_landscape">8K landscape, upscaled export</option>
+                <option value="8k_portrait">8K portrait, upscaled export</option>
+                <option value="auto">Auto</option>
+              </select>
+            </label>
+            <label><span data-i18n="quality">Quality</span><select id="quality"><option value="auto">auto</option><option value="high" selected>high</option><option value="medium">medium</option><option value="low">low</option></select></label>
+            <label><span data-i18n="count">Count</span><select id="n"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
+            <label><span data-i18n="upscale">Upscale mode</span><select id="upscale-mode"><option value="native" selected>Native</option><option value="standard">Standard resize</option><option value="ai">Real-ESRGAN</option></select></label>
+          </div>
+
+          <div class="check-grid">
+            <label class="check"><input id="make-psd" type="checkbox"><span data-i18n="makePsd">Export PSD layers</span></label>
+            <label class="check"><input id="psd-split-layers" type="checkbox" checked><span data-i18n="splitLayers">Prompt same-canvas layers</span></label>
+            <label class="check"><input id="psd-remove-white" type="checkbox" checked><span data-i18n="removeWhite">Remove white background</span></label>
+            <label><span data-i18n="whiteTolerance">White tolerance</span><input id="psd-white-tolerance" type="number" min="0" max="80" value="24"></label>
+          </div>
+
+          <div class="actions">
+            <button class="btn primary" id="generate-btn" type="button" data-i18n="generate">Generate</button>
+            <button class="btn" id="clear-btn" type="button" data-i18n="clear">Clear</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="preview-stage">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker" data-i18n="stepResults">Output Grid</div>
+            <h2 class="section-title" data-i18n="results">Results</h2>
+          </div>
+          <span class="muted" id="progress-text" data-i18n="idle">Idle</span>
+        </div>
+        <div class="stage-canvas">
+          <div class="result-grid" id="result-grid">
+            <div class="empty-state" id="empty-state">
+              <div>
+                <div class="empty-viz"></div>
+                <strong data-i18n="emptyTitle">No generations yet</strong>
+                <p class="muted" data-i18n="emptyBody">Configure prompt skills, attach references if needed, then generate.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="inspector-rail">
+        <div class="section-head">
+          <div>
+            <div class="section-kicker" data-i18n="stepGenerate">AI Telemetry</div>
+            <h2 class="section-title" data-i18n="runtime">Runtime</h2>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+          <div class="metric-stack">
+            <div class="metric-card"><span data-i18n="provider">Provider</span><strong>OpenAI</strong></div>
+            <div class="metric-card"><span data-i18n="model">Model</span><strong id="model-label-side">gpt-image-2</strong></div>
+            <div class="metric-card"><span data-i18n="exportKind">Export</span><strong id="export-kind">Native</strong></div>
+            <div class="metric-card"><span data-i18n="skillStatus">Skill mode</span><strong id="skill-status">Free</strong></div>
+          </div>
+          <div class="analysis-panel">
+            <div class="algo-map" aria-hidden="true">
+              <svg viewBox="0 0 310 180" role="img">
+                <defs>
+                  <linearGradient id="g" x1="0" x2="1">
+                    <stop stop-color="#4e8cff"/>
+                    <stop offset=".5" stop-color="#4be8ff"/>
+                    <stop offset="1" stop-color="#58ffc7"/>
+                  </linearGradient>
+                </defs>
+                <path d="M32 132 L84 72 L142 118 L196 54 L278 104" fill="none" stroke="url(#g)" stroke-width="1.4" opacity=".82"/>
+                <path d="M32 46 L84 72 L142 38 L196 54 L278 28" fill="none" stroke="#4be8ff" stroke-width=".8" opacity=".35"/>
+                <path d="M32 132 L142 118 L278 104 M84 72 L196 54" fill="none" stroke="#58ffc7" stroke-width=".8" opacity=".28"/>
+                <g fill="#4be8ff"><circle cx="32" cy="132" r="4"/><circle cx="84" cy="72" r="4"/><circle cx="142" cy="118" r="4"/><circle cx="196" cy="54" r="4"/><circle cx="278" cy="104" r="4"/></g>
+                <g fill="#58ffc7" opacity=".82"><circle cx="32" cy="46" r="3"/><circle cx="142" cy="38" r="3"/><circle cx="278" cy="28" r="3"/></g>
+              </svg>
+            </div>
+            <div class="metric-card">
+              <div class="data-row"><span>Prompt</span><div class="bar"><i style="width:82%"></i></div><strong>82</strong></div>
+              <div class="data-row"><span>Vision</span><div class="bar"><i style="width:68%"></i></div><strong>68</strong></div>
+              <div class="data-row"><span>Layers</span><div class="bar"><i style="width:74%"></i></div><strong>74</strong></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="overlay" id="settings-overlay">
+    <div class="modal">
+      <div class="modal-head"><strong data-i18n="settings">Settings</strong><button class="btn" type="button" data-close="settings-overlay" data-i18n="close">Close</button></div>
+      <div class="modal-body">
+        <label><span data-i18n="apiKey">OpenAI API key</span><input id="cfg-openai-key" type="password" autocomplete="off"></label>
+        <label><span data-i18n="baseUrl">OpenAI base URL</span><input id="cfg-openai-base" type="text" placeholder="https://api.openai.com/v1"></label>
+        <label><span data-i18n="model">Model</span><input id="cfg-model" type="text" placeholder="gpt-image-2"></label>
+        <label><span data-i18n="realesrgan">Real-ESRGAN path</span><input id="cfg-realesrgan" type="text"></label>
+        <label><span data-i18n="defaultUpscale">Default upscale mode</span><select id="cfg-default-upscale"><option value="native">native</option><option value="standard">standard</option><option value="ai">Real-ESRGAN</option></select></label>
+        <div class="actions">
+          <button class="btn primary" id="save-settings" type="button" data-i18n="save">Save</button>
+          <button class="btn danger" id="clear-history" type="button" data-i18n="clearHistory">Clear history</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="history-overlay">
+    <div class="modal">
+      <div class="modal-head"><strong data-i18n="history">History</strong><button class="btn" type="button" data-close="history-overlay" data-i18n="close">Close</button></div>
+      <div class="modal-body"><div class="history-list" id="history-list"></div></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="lightbox"><img class="lightbox-img" id="lightbox-img" alt="preview"></div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const I18N = {
+      en: {
+        subtitle: 'AI console for official OpenAI image generation', online: 'online', history: 'History', settings: 'Settings',
+        provider: 'Provider', model: 'Model', stepInput: 'Input Matrix', stepGenerate: 'AI Telemetry', stepResults: 'Output Grid',
+        controls: 'Generation controls', runtime: 'Runtime', results: 'Results', renderPipe: 'Render pipeline', textMode: 'Text to image', imageMode: 'Image to image', imageTextMode: 'Image + text',
+        prompt: 'Prompt', promptPlaceholder: 'Describe subject, scene, lighting, composition, material, and use case.',
+        skillMode: 'Prompt skill mode', useCase: 'Use case', style: 'Style', subject: 'Subject', applySkill: 'Apply to prompt', randomSkill: 'Random inspiration',
+        skillPreviewFree: 'Free mode: only your prompt is used.', references: 'Reference images', chooseFiles: 'Choose files', noFileSelected: 'No files selected', filesSelected: '{count} files selected', size: 'Output size', quality: 'Quality', count: 'Count', upscale: 'Upscale mode',
+        makePsd: 'Export PSD layers', splitLayers: 'Prompt same-canvas layers', removeWhite: 'Remove white background', whiteTolerance: 'White tolerance',
+        generate: 'Generate', clear: 'Clear', idle: 'Idle', exportKind: 'Export', skillStatus: 'Skill mode', apiKey: 'OpenAI API key', baseUrl: 'OpenAI base URL',
+        quickApiKey: 'Quick API key', quickApiKeyPlaceholder: 'Paste OpenAI API key', saveKey: 'Save key', keySaved: 'API key saved', keyRequired: 'Enter an API key first',
+        keySourceEnv: 'Key source: OPENAI_API_KEY environment variable', keySourceLocal: 'Key source: local config', keySourceMissing: 'Key source: not configured',
+        realesrgan: 'Real-ESRGAN path', defaultUpscale: 'Default upscale mode', save: 'Save', clearHistory: 'Clear history', close: 'Close',
+        saved: 'Settings saved', submitted: 'Submitted', done: 'Generation complete', failed: 'Generation failed', noHistory: 'No history yet',
+        download: 'Download', psdFile: 'PSD layered file', apiReady: 'API key ready', apiMissing: 'API key missing', native: 'Native', upscaled: 'Upscaled export',
+        emptyTitle: 'No generations yet', emptyBody: 'Configure prompt skills, attach references if needed, then generate.',
+        free: 'Free', light: 'Light enhancement', structured: 'Structured'
+      },
+      zh: {
+        subtitle: '官方 OpenAI 图像生成 AI 控制台', online: '在线', history: '历史', settings: '设置',
+        provider: '服务商', model: '模型', stepInput: '输入矩阵', stepGenerate: 'AI 遥测', stepResults: '输出网格',
+        controls: '生成控制', runtime: '运行状态', results: '结果', renderPipe: '渲染管线', textMode: '文生图', imageMode: '图生图', imageTextMode: '图加文生图',
+        prompt: '提示词', promptPlaceholder: '描述主体、场景、光线、构图、材质和用途。',
+        skillMode: '提示词技能模式', useCase: '使用场景', style: '风格', subject: '主体', applySkill: '应用到提示词', randomSkill: '随机灵感',
+        skillPreviewFree: '自由模式：只使用你输入的提示词。', references: '参考图', chooseFiles: '选择文件', noFileSelected: '未选择文件', filesSelected: '已选择 {count} 个文件', size: '输出尺寸', quality: '质量', count: '数量', upscale: '放大模式',
+        makePsd: '导出 PSD 分层文件', splitLayers: '提示同画布拆层', removeWhite: '去除白色背景', whiteTolerance: '白底容差',
+        generate: '生成', clear: '清空', idle: '等待任务', exportKind: '导出', skillStatus: '技能模式', apiKey: 'OpenAI API Key', baseUrl: 'OpenAI API 地址',
+        quickApiKey: '快速填写 API Key', quickApiKeyPlaceholder: '粘贴 OpenAI API Key', saveKey: '保存 Key', keySaved: 'API Key 已保存', keyRequired: '请先输入 API Key',
+        keySourceEnv: 'Key 来源：OPENAI_API_KEY 环境变量', keySourceLocal: 'Key 来源：本地配置', keySourceMissing: 'Key 来源：未配置',
+        realesrgan: 'Real-ESRGAN 路径', defaultUpscale: '默认放大模式', save: '保存', clearHistory: '清空历史', close: '关闭',
+        saved: '设置已保存', submitted: '任务已提交', done: '生成完成', failed: '生成失败', noHistory: '暂无历史',
+        download: '下载', psdFile: 'PSD 分层文件', apiReady: 'API Key 已配置', apiMissing: '未配置 API Key', native: '原生', upscaled: '放大导出',
+        emptyTitle: '还没有生成结果', emptyBody: '配置提示词技能，按需添加参考图，然后开始生成。',
+        free: '自由', light: '轻度增强', structured: '结构化'
+      }
+    };
+
+    const SKILL_GROUPS = {
+      useCases: {
+        '': ['Free choice', '自由选择', ''],
+        profile_avatar: ['Profile / avatar', '个人资料 / 头像', 'avatar composition, clear subject, suitable for social profile cropping'],
+        social_media_post: ['Social media post', '社交媒体帖子', 'feed-friendly composition, clear focal point, space for short copy'],
+        infographic_edu_visual: ['Infographic / education visual', '信息图 / 教育视觉图', 'clear structure, modular information, readable labels'],
+        youtube_thumbnail: ['YouTube thumbnail', 'YouTube 缩略图', 'strong contrast, large subject, obvious title zone'],
+        comic_storyboard: ['Comic / storyboard', '漫画 / 故事板', 'sequential storytelling, clear action, consistent characters'],
+        product_marketing: ['Product marketing', '产品营销', 'selling points, material, use scenario, and brand feeling'],
+        ecommerce_main_image: ['E-commerce main image', '电商主图', 'clean commercial product composition, clear silhouette'],
+        game_asset: ['Game asset', '游戏素材', 'recognizable silhouette and form for game or UI assets'],
+        poster_flyer: ['Poster / flyer', '海报 / 传单', 'strong key visual, clear hierarchy, readable campaign space'],
+        app_web_design: ['App / web design', 'App / 网页设计', 'high-fidelity interface layout and realistic product screenshot feel']
+      },
+      styles: {
+        '': ['Free style', '自由风格', ''],
+        photography: ['Photography', '摄影', 'real lens language, natural light, credible material'],
+        cinematic_film_still: ['Cinematic film still', '电影 / 剧照', 'cinematic lighting, depth, color grade, narrative mood'],
+        anime_manga: ['Anime / manga', '动漫 / 漫画', 'clean linework, expressive character pose'],
+        illustration: ['Illustration', '插画', 'commercial illustration quality, complete image'],
+        sketch_line_art: ['Sketch / line art', '草图 / 线稿', 'clear linework and accurate structure'],
+        comic_graphic_novel: ['Comic / graphic novel', '漫画 / 图像小说', 'dramatic composition and ink or panel treatment'],
+        '3d_render': ['3D render', '3D 渲染', 'refined modeling, realistic materials, studio lighting'],
+        chibi_q_style: ['Chibi / cute style', 'Q版 / 萌系', 'cute silhouette, soft expression'],
+        isometric: ['Isometric', '等距视角', 'clear isometric spatial relationships'],
+        pixel_art: ['Pixel art', '像素艺术', 'crisp pixel blocks, limited palette'],
+        oil_painting: ['Oil painting', '油画', 'thick brushwork and rich light'],
+        watercolor: ['Watercolor', '水彩', 'transparent washes and paper texture'],
+        ink_chinese_style: ['Ink / Chinese style', '水墨 / 中国风', 'ink wash negative space and layered brushwork'],
+        retro_vintage: ['Retro / vintage', '复古 / 怀旧', 'vintage palette and grain texture'],
+        cyberpunk_sci_fi: ['Cyberpunk / sci-fi', '赛博朋克 / 科幻', 'neon light, future city, technology components'],
+        minimalism: ['Minimalism', '极简主义', 'few elements, generous whitespace, clean hierarchy']
+      },
+      subjects: {
+        '': ['Free subject', '自由主体', ''],
+        portrait_selfie: ['Portrait / selfie', '人像 / 自拍', 'clear face, natural pose'],
+        influencer_model: ['Influencer / model', '网红 / 模特', 'fashion presentation and social media feel'],
+        character: ['Character', '角色', 'consistent costume, silhouette, and personality'],
+        group_couple: ['Group / couple', '团体 / 情侣', 'clear relationship and interactive pose'],
+        product: ['Product', '产品', 'clear material, structure, proportion, and selling points'],
+        food_drink: ['Food / drink', '食品 / 饮料', 'fresh appetizing texture and clean plating'],
+        fashion_item: ['Fashion item', '时尚单品', 'fabric, cut, accessory, and detail clarity'],
+        animal_creature: ['Animal / creature', '动物 / 生物', 'believable anatomy and natural motion'],
+        vehicle: ['Vehicle', '车辆', 'accurate proportions and mechanical detail'],
+        architecture_interior: ['Architecture / interior', '建筑 / 室内', 'accurate perspective, light, material, and scale'],
+        landscape_nature: ['Landscape / nature', '风景 / 自然', 'environment depth, weather, light'],
+        cityscape_street: ['Cityscape / street', '城市风光 / 街道', 'rich street details and city atmosphere'],
+        diagram_chart: ['Diagram / chart', '图表', 'accurate information structure and readable layout'],
+        text_typography: ['Text / typography', '文字 / 排版', 'accurate readable text and natural hierarchy'],
+        abstract_background: ['Abstract / background', '抽象 / 背景', 'texture, color, and depth for background use']
+      }
+    };
+
+    const CLIENT_ID = (() => {
+      let id = localStorage.getItem('client_id_gpt_image_2_openai_public');
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem('client_id_gpt_image_2_openai_public', id);
+      }
+      return id;
+    })();
+    const S = { lang: 'en', taskId: null, currentRunId: null, mode: 'text', config: null, generatedPromptBase: null };
+    function $(id) { return document.getElementById(id); }
+    function t(key) { return (I18N[S.lang] && I18N[S.lang][key]) || I18N.en[key] || key; }
+    function labelFor(item) { return S.lang === 'zh' ? item[1] : item[0]; }
+
+    function setLanguage(lang) {
+      S.lang = lang === 'zh' ? 'zh' : 'en';
+      document.documentElement.lang = S.lang === 'zh' ? 'zh-CN' : 'en';
+      localStorage.setItem('gpt_image_2_public_lang', S.lang);
+      document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+      $('lang-en').classList.toggle('active', S.lang === 'en');
+      $('lang-zh').classList.toggle('active', S.lang === 'zh');
+      $('lang-zh').textContent = S.lang === 'en' ? 'Chinese' : '中文';
+      refreshSkillOptionLabels();
+      updateSkillPreview();
+      updateExportKindLabel();
+      updateKeySourceLabel();
+      updateFileStatus();
+    }
+    function initLanguage() {
+      const saved = localStorage.getItem('gpt_image_2_public_lang');
+      setLanguage(saved || ((navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en'));
+    }
+    function updateExportKindLabel() {
+      const value = $('size-label').value;
+      const upscaled = value.startsWith('8k_') || value === '4k_square';
+      $('export-kind').textContent = upscaled ? t('upscaled') : t('native');
+    }
+    function fillSkillSelect(id, options) {
+      const select = $(id);
+      select.innerHTML = '';
+      Object.entries(options).forEach(([value, item]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.dataset.en = item[0];
+        option.dataset.zh = item[1];
+        option.textContent = labelFor(item);
+        select.appendChild(option);
+      });
+    }
+    function refreshSkillOptionLabels() {
+      ['skill-use-case', 'skill-style', 'skill-subject'].forEach(id => {
+        const select = $(id);
+        [...select.options].forEach(option => {
+          option.textContent = S.lang === 'zh' ? option.dataset.zh : option.dataset.en;
+        });
+      });
+      [...$('skill-mode').options].forEach(option => {
+        option.textContent = t(option.value);
+      });
+    }
+    function updateKeySourceLabel() {
+      if (!S.config) {
+        $('key-source').textContent = t('keySourceMissing');
+        return;
+      }
+      $('key-source').textContent = S.config._key_source === 'environment'
+        ? t('keySourceEnv')
+        : (S.config.has_openai_api_key ? t('keySourceLocal') : t('keySourceMissing'));
+    }
+    function updateFileStatus() {
+      const count = $('images').files.length;
+      $('images-file-status').textContent = count
+        ? t('filesSelected').replace('{count}', count)
+        : t('noFileSelected');
+    }
+    function selectedSkillLines(localized = true) {
+      const selected = [
+        [localized ? t('useCase') : 'Use case', SKILL_GROUPS.useCases[$('skill-use-case').value]],
+        [localized ? t('style') : 'Style', SKILL_GROUPS.styles[$('skill-style').value]],
+        [localized ? t('subject') : 'Subject', SKILL_GROUPS.subjects[$('skill-subject').value]]
+      ];
+      return selected.filter(([, item]) => item && item[2]).map(([name, item]) => `${name}: ${localized ? labelFor(item) : item[0]}. ${item[2]}`);
+    }
+    function buildSkillPrompt(base) {
+      const mode = $('skill-mode').value;
+      const lines = selectedSkillLines(false);
+      const clean = (base || '').trim();
+      if (mode === 'free' || !lines.length) return clean;
+      if (mode === 'light') {
+        return [clean || 'Create a complete finished image.', 'Enhance the prompt using these GPT Image 2 skill directions:', ...lines, 'Keep the composition complete, the subject clear, and details useful. Avoid unrelated elements.'].join('\n');
+      }
+      return [`User goal: ${clean || 'Create a high-quality finished image based on the selected type.'}`, 'Generate the image using a structured GPT Image 2 prompt:', ...lines, 'Composition requirements: complete composition, clear visual hierarchy, strong material, light, space, and detail control.', 'Readable text: if text appears, it must be accurate, clear, and naturally typeset; avoid unnecessary text.', 'Delivery target: production-ready commercial visual, not a rough draft.'].join('\n');
+    }
+    function updateSkillPreview() {
+      const mode = $('skill-mode').value;
+      $('skill-status').textContent = t(mode);
+      if (mode === 'free') {
+        $('skill-preview').textContent = t('skillPreviewFree');
+        return;
+      }
+      const lines = selectedSkillLines();
+      $('skill-preview').textContent = lines.length ? lines.join(' / ') : t('skillPreviewFree');
+    }
+    function pickRandomKey(options) {
+      const keys = Object.keys(options).filter(Boolean);
+      return keys[Math.floor(Math.random() * keys.length)];
+    }
+    function hasSkillSelection() {
+      return Boolean($('skill-use-case').value || $('skill-style').value || $('skill-subject').value);
+    }
+    function randomizeSkillSelection() {
+      $('skill-use-case').value = pickRandomKey(SKILL_GROUPS.useCases);
+      $('skill-style').value = pickRandomKey(SKILL_GROUPS.styles);
+      $('skill-subject').value = pickRandomKey(SKILL_GROUPS.subjects);
+      updateSkillPreview();
+    }
+    function ensureSkillSelection() {
+      if ($('skill-mode').value === 'free') $('skill-mode').value = 'light';
+      if (!hasSkillSelection()) randomizeSkillSelection();
+      updateSkillPreview();
+    }
+    function applyGeneratedSkillPrompt() {
+      ensureSkillSelection();
+      const base = S.generatedPromptBase === null ? $('prompt').value : S.generatedPromptBase;
+      const generated = buildSkillPrompt(base);
+      S.generatedPromptBase = base;
+      $('prompt').value = generated;
+      return generated;
+    }
+
+    async function loadConfig() {
+      const res = await fetch('/api/config');
+      const data = await res.json();
+      S.config = data;
+      $('cfg-openai-base').value = data.openai_base_url || 'https://api.openai.com/v1';
+      $('cfg-model').value = data.model || 'gpt-image-2';
+      $('model-label').textContent = data.model || 'gpt-image-2';
+      $('model-label-side').textContent = data.model || 'gpt-image-2';
+      $('cfg-realesrgan').value = data.realesrgan_path || '';
+      $('cfg-default-upscale').value = data.default_upscale_mode || 'native';
+      $('upscale-mode').value = data.default_upscale_mode || 'native';
+      $('api-status').textContent = data.has_openai_api_key ? t('apiReady') : t('apiMissing');
+      updateKeySourceLabel();
+      return data;
+    }
+    async function saveQuickKey() {
+      const key = $('quick-openai-key').value.trim();
+      if (!key) throw new Error(t('keyRequired'));
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ openai_api_key: key })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || t('failed'));
+      $('quick-openai-key').value = '';
+      $('cfg-openai-key').value = '';
+      await loadConfig();
+      showToast(t('keySaved'), 'success');
+    }
+    async function saveConfig() {
+      const body = {
+        openai_api_key: $('cfg-openai-key').value,
+        openai_base_url: $('cfg-openai-base').value,
+        model: $('cfg-model').value,
+        realesrgan_path: $('cfg-realesrgan').value,
+        default_upscale_mode: $('cfg-default-upscale').value
+      };
+      const res = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || t('failed'));
+      $('cfg-openai-key').value = '';
+      await loadConfig();
+      showToast(t('saved'), 'success');
+    }
+    async function ensureTask() {
+      if (S.taskId) return;
+      const fd = new FormData();
+      fd.append('client_id', CLIENT_ID);
+      const res = await fetch('/api/create-task', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Create task failed');
+      S.taskId = data.task_id;
+    }
+    async function startGenerate() {
+      await ensureTask();
+      const fd = new FormData();
+      fd.append('task_id', S.taskId);
+      fd.append('client_id', CLIENT_ID);
+      fd.append('mode', S.mode);
+      fd.append('prompt', $('prompt').value);
+      fd.append('size_label', $('size-label').value);
+      fd.append('n', $('n').value);
+      fd.append('quality', $('quality').value);
+      fd.append('upscale_mode', $('upscale-mode').value);
+      fd.append('make_psd', $('make-psd').checked ? 'true' : 'false');
+      fd.append('psd_split_layers', $('psd-split-layers').checked ? 'true' : 'false');
+      fd.append('psd_remove_white', $('psd-remove-white').checked ? 'true' : 'false');
+      fd.append('psd_white_tolerance', $('psd-white-tolerance').value || '24');
+      fd.append('skill_mode', $('skill-mode').value);
+      fd.append('skill_use_case', $('skill-use-case').value);
+      fd.append('skill_style', $('skill-style').value);
+      fd.append('skill_subject', $('skill-subject').value);
+      [...$('images').files].slice(0, 16).forEach(file => fd.append('images', file));
+      $('generate-btn').disabled = true;
+      setProgress(.02, t('submitted'));
+      const res = await fetch('/api/generate', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        $('generate-btn').disabled = false;
+        throw new Error(data.detail || t('failed'));
+      }
+      S.currentRunId = data.run_id;
+      _startPollProgress(S.taskId, data.run_id);
+    }
+    let _pollTimer = 0;
+    function _stopPoll() { if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = 0; } }
+    function setProgress(value, text) {
+      $('progress-bar').style.width = `${Math.round(value * 100)}%`;
+      $('progress-text').textContent = text;
+    }
+    function _startPollProgress(taskId, runId) {
+      _stopPoll();
+      _pollTimer = setInterval(async () => {
+        const res = await fetch(`/api/task-progress/${CLIENT_ID}/${taskId}/${runId}`);
+        const data = await res.json();
+        if (data.status === 'running') {
+          setProgress(data.progress || .2, data.message || t('submitted'));
+        } else if (data.status === 'done') {
+          _stopPoll();
+          $('generate-btn').disabled = false;
+          setProgress(1, t('done'));
+          showResults({ _saved_files: data.saved_files, _run_id: runId, _psd_file: data.psd_file });
+          if (data.psd_error) showToast(data.psd_error);
+          showToast(t('done'), 'success');
+        } else if (data.status === 'error') {
+          _stopPoll();
+          $('generate-btn').disabled = false;
+          setProgress(1, t('failed'));
+          showToast(data.error_msg || t('failed'));
+        }
+      }, 1800);
+    }
+    function showResults(data) {
+      const grid = $('result-grid');
+      grid.innerHTML = '';
+      (data._saved_files || []).forEach(fname => {
+        const src = `/api/result-image/${CLIENT_ID}/${S.taskId}/${data._run_id}/${encodeURIComponent(fname)}`;
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.innerHTML = `<img src="${src}" alt="${fname}"><div class="result-foot"><span class="muted">${fname}</span><a class="btn" href="${src}" download="${fname}">${t('download')}</a></div>`;
+        card.querySelector('img').addEventListener('click', () => { $('lightbox-img').src = src; $('lightbox').classList.add('show'); });
+        grid.appendChild(card);
+      });
+      if (data._psd_file) {
+        const psdSrc = `/api/result-psd/${CLIENT_ID}/${S.taskId}/${data._run_id}`;
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.innerHTML = `<div style="padding:18px;display:grid;gap:10px;min-height:190px;align-content:center;"><strong>${t('psdFile')}</strong><span class="muted">${data._psd_file}</span><a class="btn" href="${psdSrc}" download="${data._psd_file}">${t('download')}</a></div>`;
+        grid.appendChild(card);
+      }
+    }
+    async function loadHistory() {
+      const res = await fetch(`/api/history?client_id=${CLIENT_ID}`);
+      const items = await res.json();
+      const list = $('history-list');
+      list.innerHTML = '';
+      if (!items.length) {
+        list.innerHTML = `<div class="muted">${t('noHistory')}</div>`;
+        return;
+      }
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'history-item';
+        const time = item.created_at ? new Date(item.created_at * 1000).toLocaleString() : '';
+        row.innerHTML = `<strong>${item.status || ''} ${time}</strong><div class="muted">${(item.prompt || '').slice(0, 160)}</div>`;
+        list.appendChild(row);
+      });
+    }
+    async function clearOutput() {
+      const res = await fetch('/api/clear-output', { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || t('failed'));
+      $('result-grid').innerHTML = `<div class="empty-state" id="empty-state"><div><div class="empty-viz"></div><strong>${t('emptyTitle')}</strong><p class="muted">${t('emptyBody')}</p></div></div>`;
+      showToast(t('clearHistory'), 'success');
+    }
+    function showToast(msg, type) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.className = 'toast show' + (type === 'success' ? ' success' : '');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.className = 'toast', 3200);
+    }
+    function drawNetwork() {
+      const canvas = $('network-canvas');
+      if (!canvas || !canvas.getContext) return;
+      const ctx = canvas.getContext('2d');
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let width = 0;
+      let height = 0;
+      let nodes = [];
+      function resize() {
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.floor(width * ratio);
+        canvas.height = Math.floor(height * ratio);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        const count = Math.max(22, Math.min(58, Math.floor(width * height / 26000)));
+        nodes = Array.from({ length: count }, (_, i) => ({
+          x: (i * 97) % width,
+          y: (i * 53) % height,
+          vx: ((i % 7) - 3) * .045,
+          vy: ((i % 5) - 2) * .040
+        }));
+      }
+      function tick() {
+        ctx.clearRect(0, 0, width, height);
+        for (const n of nodes) {
+          if (!reduce) {
+            n.x += n.vx;
+            n.y += n.vy;
+            if (n.x < 0 || n.x > width) n.vx *= -1;
+            if (n.y < 0 || n.y > height) n.vy *= -1;
+          }
+        }
+        ctx.lineWidth = 1;
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const a = nodes[i], b = nodes[j];
+            const dx = a.x - b.x, dy = a.y - b.y;
+            const d = Math.hypot(dx, dy);
+            if (d < 150) {
+              const alpha = (1 - d / 150) * .20;
+              ctx.strokeStyle = `rgba(75, 232, 255, ${alpha})`;
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.stroke();
+            }
+          }
+        }
+        for (const n of nodes) {
+          ctx.fillStyle = 'rgba(88, 255, 199, .55)';
+          ctx.fillRect(n.x - 1.4, n.y - 1.4, 2.8, 2.8);
+        }
+        if (!reduce) requestAnimationFrame(tick);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      tick();
+    }
+    (function connectWS() {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      const ws = new WebSocket(`${proto}://${location.host}/ws/online`);
+      ws.onmessage = e => {
+        const d = JSON.parse(e.data);
+        if (d.type === 'online') $('online-count').textContent = d.count;
+      };
+      ws.onclose = () => setTimeout(connectWS, 3000);
+    })();
+    document.querySelectorAll('[data-mode]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        S.mode = btn.dataset.mode;
+      });
+    });
+    $('images').addEventListener('change', () => {
+      const row = $('preview-row');
+      row.innerHTML = '';
+      updateFileStatus();
+      [...$('images').files].slice(0, 16).forEach(file => {
+        const img = document.createElement('img');
+        img.className = 'preview-thumb';
+        img.src = URL.createObjectURL(file);
+        row.appendChild(img);
+      });
+    });
+    $('images-pick').addEventListener('click', () => $('images').click());
+    $('prompt').addEventListener('input', () => { S.generatedPromptBase = null; });
+    $('size-label').addEventListener('change', updateExportKindLabel);
+    $('generate-btn').addEventListener('click', () => startGenerate().catch(err => showToast(err.message)));
+    $('clear-btn').addEventListener('click', () => { $('result-grid').innerHTML = ''; setProgress(0, t('idle')); clearOutput().catch(err => showToast(err.message)); });
+    $('settings-btn').addEventListener('click', () => { $('settings-overlay').classList.add('show'); loadConfig().catch(err => showToast(err.message)); });
+    $('history-btn').addEventListener('click', () => { $('history-overlay').classList.add('show'); loadHistory().catch(err => showToast(err.message)); });
+    $('quick-save-key').addEventListener('click', () => saveQuickKey().catch(err => showToast(err.message)));
+    $('quick-openai-key').addEventListener('keydown', event => { if (event.key === 'Enter') saveQuickKey().catch(err => showToast(err.message)); });
+    $('save-settings').addEventListener('click', () => saveConfig().catch(err => showToast(err.message)));
+    $('clear-history').addEventListener('click', () => clearOutput().catch(err => showToast(err.message)));
+    $('apply-skill').addEventListener('click', () => { applyGeneratedSkillPrompt(); showToast(t('applySkill'), 'success'); });
+    $('random-skill').addEventListener('click', () => { $('skill-mode').value = Math.random() > .5 ? 'light' : 'structured'; randomizeSkillSelection(); applyGeneratedSkillPrompt(); showToast(t('randomSkill'), 'success'); });
+    ['skill-mode', 'skill-use-case', 'skill-style', 'skill-subject'].forEach(id => $(id).addEventListener('change', updateSkillPreview));
+    $('lang-en').addEventListener('click', () => setLanguage('en'));
+    $('lang-zh').addEventListener('click', () => setLanguage('zh'));
+    document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => $(btn.dataset.close).classList.remove('show')));
+    $('lightbox').addEventListener('click', () => $('lightbox').classList.remove('show'));
+    fillSkillSelect('skill-use-case', SKILL_GROUPS.useCases);
+    fillSkillSelect('skill-style', SKILL_GROUPS.styles);
+    fillSkillSelect('skill-subject', SKILL_GROUPS.subjects);
+    initLanguage();
+    drawNetwork();
+    loadConfig().catch(() => {});
+    updateExportKindLabel();
+    updateSkillPreview();
+  </script>
+</body>
+</html>

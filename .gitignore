@@ -1,0 +1,9 @@
+.env
+output/
+__pycache__/
+.pytest_cache/
+*.pyc
+_failures.json
+_successes.json
+config.local.json
+
