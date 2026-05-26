@@ -11,7 +11,7 @@
 
 **公开版使用你自己的官方 OpenAI API Key；仓库不内置 API Key，也不包含第三方服务商配置。**
 
-[English](README.md) | 简体中文 | [项目主页](https://iroha-p.github.io/gpt-image-2-openai-public/) | [下载源码](https://github.com/Iroha-P/gpt-image-2-openai-public/archive/refs/heads/main.zip) | [OpenAI Images API](https://platform.openai.com/docs/guides/images)
+[English](README.md) | 简体中文 | [项目主页](https://iroha-p.github.io/GPT-Image-2-Studio/) | [下载源码](https://github.com/Iroha-P/GPT-Image-2-Studio/archive/refs/heads/main.zip) | [OpenAI Images API](https://platform.openai.com/docs/guides/images)
 
 </div>
 

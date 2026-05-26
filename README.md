@@ -11,7 +11,7 @@
 
 **Bring your own official OpenAI API key. No bundled API key. No third-party provider config.**
 
-English | [简体中文](README.zh-CN.md) | [Homepage](https://iroha-p.github.io/gpt-image-2-openai-public/) | [Download Source](https://github.com/Iroha-P/gpt-image-2-openai-public/archive/refs/heads/main.zip) | [OpenAI Images API](https://platform.openai.com/docs/guides/images)
+English | [简体中文](README.zh-CN.md) | [Homepage](https://iroha-p.github.io/GPT-Image-2-Studio/) | [Download Source](https://github.com/Iroha-P/GPT-Image-2-Studio/archive/refs/heads/main.zip) | [OpenAI Images API](https://platform.openai.com/docs/guides/images)
 
 </div>
 
