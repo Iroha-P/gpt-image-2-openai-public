@@ -9,9 +9,9 @@
 [![FastAPI](https://img.shields.io/badge/built%20with-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-**Official OpenAI endpoint by default. No third-party provider config. No bundled API key.**
+**Bring your own official OpenAI API key. No bundled API key. No third-party provider config.**
 
-[Homepage](https://iroha-p.github.io/gpt-image-2-openai-public/) | [Download Source](https://github.com/Iroha-P/gpt-image-2-openai-public/archive/refs/heads/main.zip) | [OpenAI Images API](https://platform.openai.com/docs/guides/images)
+English | [简体中文](README.zh-CN.md) | [Homepage](https://iroha-p.github.io/gpt-image-2-openai-public/) | [Download Source](https://github.com/Iroha-P/gpt-image-2-openai-public/archive/refs/heads/main.zip) | [OpenAI Images API](https://platform.openai.com/docs/guides/images)
 
 </div>
 
@@ -21,23 +21,45 @@ Most image-generation demos are either a thin API form or a heavy creative suite
 
 - **Official OpenAI API** - uses `https://api.openai.com/v1` by default and supports `OPENAI_API_KEY`
 - **Public-safe configuration** - the tracked `config.json` keeps `openai_api_key` blank, while local secrets live in ignored `config.local.json`
-- **Large image-generation skill library** - built-in prompt skills cover use cases, styles, and subject types for thousands of combinations
+- **Large image-generation skill library** - integrates skill presets from [EvoLinkAI/awesome-gpt-image-2-API-and-Prompts](https://github.com/EvoLinkAI/awesome-gpt-image-2-API-and-Prompts) and exposes them as workflow controls
 - **Text, image, and mixed workflows** - text-to-image, image-to-image, and image-plus-text generation
 - **Production export helpers** - 1K to 8K presets, native/upscaled export labels, readable result mirrors, and optional PSD layers
 
-## Screenshots
+## Interface Guide
 
-| Studio Console | Settings |
-| :------------: | :------: |
-| ![GPT Image 2 Studio console](docs/screenshot-studio.png) | ![GPT Image 2 Studio settings](docs/screenshot-settings.png) |
-
-| Mobile Layout |
-| :-----------: |
-| ![GPT Image 2 Studio mobile layout](docs/screenshot-mobile.png) |
+<table>
+  <tr>
+    <td width="64%">
+      <img src="docs/screenshot-studio.png" alt="GPT Image 2 Studio desktop console">
+    </td>
+    <td width="36%">
+      <strong>Studio Console</strong><br>
+      The main workspace keeps the prompt editor, generation mode, image-skill selectors, export scale, model status, and result area visible in one dense console. It is meant for real prompt iteration rather than a single throwaway API call.
+    </td>
+  </tr>
+  <tr>
+    <td width="64%">
+      <img src="docs/screenshot-settings.png" alt="GPT Image 2 Studio settings panel">
+    </td>
+    <td width="36%">
+      <strong>Safe Settings Panel</strong><br>
+      The settings panel uses the official OpenAI base URL by default, keeps the tracked API key empty, and stores local credentials outside Git through ignored local config.
+    </td>
+  </tr>
+  <tr>
+    <td width="64%">
+      <img src="docs/screenshot-mobile.png" alt="GPT Image 2 Studio mobile layout">
+    </td>
+    <td width="36%">
+      <strong>Mobile Layout</strong><br>
+      The same generation flow adapts to narrow screens, including quick API-key entry, bilingual controls, history access, settings, and stacked prompt tools.
+    </td>
+  </tr>
+</table>
 
 ## Image Generation Skills
 
-This public version keeps the advanced prompt-skill workflow from the internal Skill edition, but routes generation through the official OpenAI API.
+This public version keeps the advanced prompt-skill workflow from the internal Skill edition, but routes generation through the official OpenAI API. It also integrates image-generation skill presets from [EvoLinkAI/awesome-gpt-image-2-API-and-Prompts](https://github.com/EvoLinkAI/awesome-gpt-image-2-API-and-Prompts), then turns them into practical controls for use case, visual style, and subject direction.
 
 The built-in skill system combines:
 
@@ -134,29 +156,31 @@ The repository version intentionally contains no real API key and no third-party
 ## Requirements
 
 - Python 3.11 or newer
-- OpenAI API key with image-generation access
+- Official OpenAI API key with image-generation access
 - Modern browser
 - Optional: Real-ESRGAN executable for AI upscaling
 
 ## Project Structure
 
 ```text
-gpt-image-2-openai-public/
-├─ app.py
-├─ config.json
-├─ config.example.json
-├─ gpt_image_tool/
-│  ├─ core.py
-│  ├─ openai_client.py
-│  ├─ prompt_skills.py
-│  ├─ processing.py
-│  └─ psd_export.py
-├─ templates/
-│  └─ index.html
-├─ docs/
-│  ├─ index.html
-│  └─ screenshots
-└─ README.md
+GPT-Image-2-Studio/
+|-- app.py
+|-- config.json
+|-- config.example.json
+|-- gpt_image_tool/
+|   |-- core.py
+|   |-- openai_client.py
+|   |-- prompt_skills.py
+|   |-- processing.py
+|   `-- psd_export.py
+|-- templates/
+|   `-- index.html
+|-- docs/
+|   |-- index.html
+|   |-- screenshot-studio.png
+|   |-- screenshot-settings.png
+|   `-- screenshot-mobile.png
+`-- README.md
 ```
 
 ## Safety Notes
